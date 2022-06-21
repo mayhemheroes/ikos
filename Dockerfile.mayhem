@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 as builder
 ARG njobs=4
 ARG build_type=Release
 
@@ -53,3 +53,12 @@ RUN make check
 
 # Add ikos to the path
 ENV PATH "/opt/ikos/bin:$PATH"
+
+RUN mkdir -p /deps
+RUN ldd /opt/ikos/bin/ikos-analyzer | tr -s '[:blank:]' '\n' | grep '^/' | xargs -I % sh -c 'cp % /deps;'
+
+FROM ubuntu:18.04 as package
+
+COPY --from=builder /deps /deps
+COPY --from=builder /opt/ikos/bin/ikos-analyzer /opt/ikos/bin/ikos-analyzer
+ENV LD_LIBRARY_PATH=/deps

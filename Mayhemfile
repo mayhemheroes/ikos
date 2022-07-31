@@ -2,6 +2,6 @@ project: ikos
 target: ikos-analyzer
 
 cmds:
-  - cmd: /opt/ikos/bin/ikos-analyzer -a=boa --entry-points=main @@
+  - cmd: /install/bin/ikos-analyzer -a=boa --entry-points=main @@
     env:
       DISABLE_SMOKETEST: '1'

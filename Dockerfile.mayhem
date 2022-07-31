@@ -34,31 +34,25 @@ RUN apt-get install -y gcc g++ cmake libgmp-dev libboost-dev \
         llvm-9 llvm-9-dev llvm-9-tools clang-9
 
 # Add ikos source code
-ADD . /root/ikos
+COPY . /root/ikos
 
 # Build ikos
 RUN rm -rf /root/ikos/build && mkdir /root/ikos/build
 WORKDIR /root/ikos/build
 ENV MAKEFLAGS "-j$njobs"
 RUN cmake \
-        -DCMAKE_INSTALL_PREFIX="/opt/ikos" \
+        -DCMAKE_INSTALL_PREFIX=/install \
         -DCMAKE_BUILD_TYPE="$build_type" \
         -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-9/bin/llvm-config" \
         ..
-RUN make
+RUN make -j8
 RUN make install
 
-# Run the tests
-RUN make check
-
-# Add ikos to the path
-ENV PATH "/opt/ikos/bin:$PATH"
-
-RUN mkdir -p /deps
-RUN ldd /opt/ikos/bin/ikos-analyzer | tr -s '[:blank:]' '\n' | grep '^/' | xargs -I % sh -c 'cp % /deps;'
-
 FROM ubuntu:18.04 as package
+# Refresh cache
+RUN apt-get update
 
-COPY --from=builder /deps /deps
-COPY --from=builder /opt/ikos/bin/ikos-analyzer /opt/ikos/bin/ikos-analyzer
-ENV LD_LIBRARY_PATH=/deps
+# Install all dependencies
+RUN apt-get install -y libgmp-dev libboost-dev \
+        libboost-filesystem-dev libboost-thread-dev libsqlite3-dev libtbb-dev libz-dev libedit-dev
+COPY --from=builder /install /install

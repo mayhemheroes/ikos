@@ -1,37 +1,27 @@
-FROM ubuntu:18.04 as builder
+FROM ubuntu:22.04 AS builder
 ARG njobs=4
 ARG build_type=Release
 
-# Installs the following versions (note that it might be out of date):
-# cmake 3.10.2
-# gmp 6.1.2
-# boost 1.65.1
-# python 2.7.15
-# sqlite 3.22.0
-# tbb 9107
-# llvm 9.0.1
-# clang 9.0.1
-# gcc 7.4.0
+# Installs the following versions:
+# cmake 3.22.1
+# gmp 6.2.1
+# boost 1.74.0
+# python 3.10
+# sqlite 3.37.2
+# tbb 2021.5.0
+# llvm 14.0.0
+# clang 14.0.0
+# gcc 11.x
 
 # Upgrade
 RUN apt-get update
 RUN apt-get upgrade -y
 
-# Add ppa for llvm 9.0
-RUN echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main" >> /etc/apt/sources.list
-
-# Add llvm repository key
-RUN apt-get install -y wget gnupg
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-
-# Refresh cache
-RUN apt-get update
-
 # Install all dependencies
 RUN apt-get install -y gcc g++ cmake libgmp-dev libboost-dev \
-        libboost-filesystem-dev libboost-thread-dev libboost-test-dev python \
-        python-pygments libsqlite3-dev libtbb-dev libz-dev libedit-dev \
-        llvm-9 llvm-9-dev llvm-9-tools clang-9
+        libboost-filesystem-dev libboost-thread-dev libboost-test-dev python3 python3-venv \
+        python3-pygments libsqlite3-dev libtbb-dev libz-dev libedit-dev \
+        llvm-14 llvm-14-dev llvm-14-tools clang-14
 
 # Add ikos source code
 COPY . /root/ikos
@@ -39,16 +29,16 @@ COPY . /root/ikos
 # Build ikos
 RUN rm -rf /root/ikos/build && mkdir /root/ikos/build
 WORKDIR /root/ikos/build
-ENV MAKEFLAGS "-j$njobs"
+ENV MAKEFLAGS="-j${njobs}"
 RUN cmake \
         -DCMAKE_INSTALL_PREFIX=/install \
-        -DCMAKE_BUILD_TYPE="$build_type" \
-        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-9/bin/llvm-config" \
+        -DCMAKE_BUILD_TYPE="${build_type}" \
+        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-14/bin/llvm-config" \
         ..
 RUN make -j8
 RUN make install
 
-FROM ubuntu:18.04 as package
+FROM ubuntu:22.04 AS package
 # Refresh cache
 RUN apt-get update
 

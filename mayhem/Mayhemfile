@@ -1,0 +1,11 @@
+project: ikos
+target: ikos-analyzer
+
+cmds:
+  - cmd: /mayhem/build/analyzer/ikos-analyzer -a=boa --entry-points=main -o=/tmp/output.db @@
+    env:
+      DISABLE_SMOKETEST: '1'
+
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/ikos-analyzer/testsuite
